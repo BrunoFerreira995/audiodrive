@@ -1,0 +1,18 @@
+Start testing: Jul 08 11:36 -03
+----------------------------------------------------------
+1/1 Testing: audio32_tests
+1/1 Test: audio32_tests
+Command: "/Users/bucha/audiodrive/Audio32/build/audio32_tests"
+Directory: /Users/bucha/audiodrive/Audio32/build
+"audio32_tests" start time: Jul 08 11:36 -03
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.22 sec
+----------------------------------------------------------
+Test Passed.
+"audio32_tests" end time: Jul 08 11:36 -03
+"audio32_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Jul 08 11:36 -03

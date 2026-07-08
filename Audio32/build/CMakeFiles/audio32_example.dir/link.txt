@@ -1,0 +1,1 @@
+/usr/bin/c++  -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/audio32_example.dir/examples/basic_playback.cpp.o -o audio32_example  libaudio32.a -framework AudioToolbox -framework CoreAudio

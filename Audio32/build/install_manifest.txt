@@ -1,0 +1,6 @@
+/Users/bucha/.local/lib/libaudio32.a
+/Users/bucha/.local/include/audio32/coreaudio.hpp
+/Users/bucha/.local/include/audio32/mixer.hpp
+/Users/bucha/.local/include/audio32/dsp.hpp
+/Users/bucha/.local/include/audio32/buffer.hpp
+/Users/bucha/.local/include/audio32/audio_driver.hpp

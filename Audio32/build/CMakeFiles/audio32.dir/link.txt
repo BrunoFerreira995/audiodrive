@@ -1,0 +1,2 @@
+/usr/bin/ar qc libaudio32.a CMakeFiles/audio32.dir/src/audio_driver.cpp.o CMakeFiles/audio32.dir/src/buffer.cpp.o CMakeFiles/audio32.dir/src/coreaudio.cpp.o CMakeFiles/audio32.dir/src/dsp.cpp.o CMakeFiles/audio32.dir/src/mixer.cpp.o
+/usr/bin/ranlib libaudio32.a

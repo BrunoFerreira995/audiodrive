@@ -1,0 +1,10 @@
+/Users/bucha/audiodrive/Audio32/build/CMakeFiles/audio32.dir
+/Users/bucha/audiodrive/Audio32/build/CMakeFiles/audio32_example.dir
+/Users/bucha/audiodrive/Audio32/build/CMakeFiles/audio32_tests.dir
+/Users/bucha/audiodrive/Audio32/build/CMakeFiles/test.dir
+/Users/bucha/audiodrive/Audio32/build/CMakeFiles/edit_cache.dir
+/Users/bucha/audiodrive/Audio32/build/CMakeFiles/rebuild_cache.dir
+/Users/bucha/audiodrive/Audio32/build/CMakeFiles/list_install_components.dir
+/Users/bucha/audiodrive/Audio32/build/CMakeFiles/install.dir
+/Users/bucha/audiodrive/Audio32/build/CMakeFiles/install/local.dir
+/Users/bucha/audiodrive/Audio32/build/CMakeFiles/install/strip.dir
