@@ -67,7 +67,7 @@ Supported pipeline formats:
 - AIFF
 - CAF
 
-The current library API accepts interleaved `Float32` samples. Container decoding and integer PCM conversion are roadmap items.
+The library API accepts interleaved `Float32` samples. The `audio_io` module provides integer PCM conversion and LPCM WAV, AIFF, and CAF decoding into the same interleaved `Float32` representation.
 
 ## DSP Features
 
@@ -194,20 +194,42 @@ driver.start();
 
 ## Roadmap
 
-- [x] Audio Engine
-- [x] Mixer
-- [x] DSP Pipeline
-- [x] Ring Buffer
-- [x] CoreAudio Backend Boundary
-- [ ] CoreAudio Device Render Integration
-- [ ] AudioUnit Plugin
-- [ ] MIDI Support
-- [ ] Bluetooth Audio
-- [ ] Spatial Audio
-- [ ] AVFoundation Integration
-- [ ] Metal Visualization
-- [ ] ARM64 Optimizations
-- [ ] Apple Silicon Native DSP
+### Phase 1: Core Library
+
+- [x] Public `AudioDriver` facade
+- [x] Fixed-size circular audio buffer
+- [x] Mixer with channel routing
+- [x] DSP pipeline with gain, limiter, and analysis hooks
+- [x] CoreAudio backend boundary
+- [x] CMake build, example app, and tests
+
+### Phase 2: macOS Playback Backend
+
+- [x] Wire the CoreAudio render callback to an AudioQueue output path
+- [x] Add output device UID selection and Float32 stream configuration
+- [x] Handle stop/start recovery and backend error reporting
+- [x] Add manual validation through the playback example
+
+### Phase 3: Format and I/O Support
+
+- [x] Add integer PCM to `Float32` conversion
+- [x] Add WAV, AIFF, and CAF LPCM container decoding
+- [x] Add rendered-output recording capture
+- [x] Add output loopback capture
+
+### Phase 4: Pro Audio Features
+
+- [x] Add AudioUnit plugin packaging metadata
+- [x] Add MIDI control mapping
+- [x] Add equalizer, compressor, reverb, and delay modules
+- [x] Add AVFoundation integration boundary
+
+### Phase 5: Performance and Platform Polish
+
+- [ ] Add ARM64 and Apple Silicon DSP optimizations
+- [ ] Add SIMD implementations for hot DSP paths
+- [ ] Add Metal-based visualization
+- [ ] Explore Bluetooth and spatial audio support
 
 ## Future Features
 

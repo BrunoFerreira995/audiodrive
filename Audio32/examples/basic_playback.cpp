@@ -1,8 +1,10 @@
 #include "audio_driver.hpp"
 
 #include <cmath>
+#include <chrono>
 #include <iostream>
 #include <numbers>
+#include <thread>
 #include <vector>
 
 int main() {
@@ -29,10 +31,11 @@ int main() {
     std::cout << "queued " << written << " float samples\n";
 
     if (!driver.start()) {
-        std::cerr << "failed to start Audio32\n";
+        std::cerr << "failed to start Audio32, backend error " << driver.lastBackendError() << "\n";
         return 1;
     }
 
+    std::this_thread::sleep_for(std::chrono::seconds(1));
     driver.stop();
     return 0;
 }

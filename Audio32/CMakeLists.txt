@@ -10,10 +10,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_library(audio32 STATIC
+    src/audio_io.cpp
+    src/audio_unit.cpp
     src/audio_driver.cpp
+    src/avfoundation.cpp
     src/buffer.cpp
     src/coreaudio.cpp
     src/dsp.cpp
+    src/midi.cpp
     src/mixer.cpp)
 
 target_include_directories(audio32
@@ -24,7 +28,9 @@ if(APPLE)
     target_link_libraries(audio32
         PUBLIC
             "-framework AudioToolbox"
-            "-framework CoreAudio")
+            "-framework AVFoundation"
+            "-framework CoreAudio"
+            "-framework CoreFoundation")
 endif()
 
 target_compile_features(audio32 PUBLIC cxx_std_20)
