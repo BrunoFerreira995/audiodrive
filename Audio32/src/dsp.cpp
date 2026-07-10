@@ -1,4 +1,5 @@
 #include "dsp.hpp"
+#include "simd.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -73,6 +74,19 @@ DelaySettings DspEngine::delay() const noexcept {
 }
 
 void DspEngine::process(std::span<float> interleavedSamples) noexcept {
+    const auto effectsAreNeutral = equalizer_.lowGain == 1.0F &&
+                                   equalizer_.midGain == 1.0F &&
+                                   equalizer_.highGain == 1.0F &&
+                                   compressor_.threshold == 1.0F &&
+                                   compressor_.ratio == 1.0F &&
+                                   compressor_.makeupGain == 1.0F &&
+                                   reverb_.mix == 0.0F &&
+                                   delay_.mix == 0.0F;
+    if (effectsAreNeutral) {
+        applyGainLimiter(interleavedSamples, gain_, limiterCeiling_);
+        return;
+    }
+
     const auto ceiling = limiterCeiling_;
     const auto lowAlpha = 0.08F;
     const auto reverbMix = reverb_.mix;

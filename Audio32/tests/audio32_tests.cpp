@@ -5,8 +5,12 @@
 #include "buffer.hpp"
 #include "coreaudio.hpp"
 #include "dsp.hpp"
+#include "metal_visualization.hpp"
 #include "midi.hpp"
 #include "mixer.hpp"
+#include "platform.hpp"
+#include "simd.hpp"
+#include "wireless_audio.hpp"
 
 #include <cassert>
 #include <cmath>
@@ -85,6 +89,19 @@ int main() {
         assert(samples[1] == -0.5F);
         assert(samples[2] == 0.5F);
         assert(samples[3] == 0.75F);
+    }
+
+    {
+        std::vector<float> samples{-1.0F, -0.25F, 0.25F, 1.0F, 0.1F};
+        audio32::applyGainLimiter(samples, 2.0F, 0.75F);
+        assert(samples[0] == -0.75F);
+        assert(samples[1] == -0.5F);
+        assert(samples[2] == 0.5F);
+        assert(samples[3] == 0.75F);
+        assert(samples[4] == 0.2F);
+
+        const auto simd = audio32::simdCapabilities();
+        assert(simd.scalar);
     }
 
     {
@@ -193,6 +210,35 @@ int main() {
         assert(integration.audioEngineSupported);
 #else
         assert(!integration.available);
+#endif
+    }
+
+    {
+        const auto platform = audio32::platformCapabilities();
+        assert(!platform.architecture.empty());
+#if defined(__APPLE__)
+        assert(platform.macOS);
+#endif
+    }
+
+    {
+        const auto metal = audio32::metalVisualizationCapabilities();
+        assert(metal.offlineFramePreparation);
+        const auto bars = audio32::makeSpectrumBars(std::vector<float>{0.0F, 0.5F, 1.0F, 0.25F}, 3);
+        assert(bars.size() == 3);
+        assert(bars[0].x >= -1.0F);
+        assert(bars[2].x <= 1.0F);
+        assert(bars[1].height >= 0.0F);
+        assert(bars[1].height <= 1.0F);
+    }
+
+    {
+        const auto wireless = audio32::wirelessAudioCapabilities();
+#ifdef __APPLE__
+        assert(wireless.bluetoothOutputAvailable);
+        assert(wireless.spatialAudioAvailable);
+#else
+        assert(!wireless.bluetoothOutputAvailable);
 #endif
     }
 

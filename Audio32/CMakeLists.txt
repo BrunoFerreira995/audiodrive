@@ -17,8 +17,12 @@ add_library(audio32 STATIC
     src/buffer.cpp
     src/coreaudio.cpp
     src/dsp.cpp
+    src/metal_visualization.cpp
     src/midi.cpp
-    src/mixer.cpp)
+    src/mixer.cpp
+    src/platform.cpp
+    src/simd.cpp
+    src/wireless_audio.cpp)
 
 target_include_directories(audio32
     PUBLIC
@@ -30,7 +34,8 @@ if(APPLE)
             "-framework AudioToolbox"
             "-framework AVFoundation"
             "-framework CoreAudio"
-            "-framework CoreFoundation")
+            "-framework CoreFoundation"
+            "-framework Metal")
 endif()
 
 target_compile_features(audio32 PUBLIC cxx_std_20)
