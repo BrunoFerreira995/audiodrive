@@ -1,4 +1,5 @@
 #include "native_audio.hpp"
+#include "roundtrip_analysis.hpp"
 #include "buffer.hpp"
 #include "effect_chain.hpp"
 #include <algorithm>
@@ -101,14 +102,11 @@ int main(int argc,char** argv) {
             report<<"burst,lag_frames,roundtrip_ms,correlation\n";
             unsigned valid=0;
             for (std::size_t burst=config.sampleRate/2;burst+config.sampleRate+code.size()<std::min(position,total);burst+=config.sampleRate) {
-                double best=0; std::size_t bestLag=0;
-                for (unsigned lag=0;lag<config.sampleRate;++lag) {
-                    double product=0,energy=0;
-                    for (std::size_t i=0;i<code.size();++i) { const double sample=capture[burst+lag+i]; product+=code[i]*sample; energy+=sample*sample; }
-                    const double correlation=energy>1e-12?std::fabs(product)/std::sqrt(energy*code.size()*0.03*0.03):0;
-                    if (correlation>best) { best=correlation; bestLag=lag; }
+                const auto matched=audio32::diagnostics::findRoundTrip(std::span<const float>(capture).subspan(burst),code,config.sampleRate);
+                if (matched) {
+                    report<<burst<<','<<matched->lag<<','<<1000.0*matched->lag/config.sampleRate<<','<<matched->correlation<<'\n';
+                    ++valid;
                 }
-                if (best>=0.7) { report<<burst<<','<<bestLag<<','<<1000.0*bestLag/config.sampleRate<<','<<best<<'\n'; ++valid; }
             }
             if (!valid) throw std::runtime_error("no confident loopback signal; no physical latency result (connect an output-to-input cable)");
         } else {

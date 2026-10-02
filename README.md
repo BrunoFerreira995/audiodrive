@@ -219,6 +219,13 @@ cmake -S . -B build
 cmake --build build -j8
 ```
 
+If an existing build cache refers to a former project location, regenerate it:
+
+```bash
+cmake --fresh -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel 4
+```
+
 Release build:
 
 ```bash
@@ -402,7 +409,7 @@ Hardware validation and broader integrations remain separate milestones.
 
 See [implementation details and deployment evidence](docs/phase6.md).
 
-- [ ] Run sanitizer and stress workflows on hosted macOS and Linux runners
+- [ ] Run sanitizer and stress workflows on hosted macOS and Linux runners — [attempt blocked by GitHub account billing](https://github.com/BrunoFerreira995/audiodrive/actions/runs/37054644906)
 - [ ] Publish hardware playback and physical round-trip latency measurements
 - [ ] Validate effect sound quality through listening tests
 - [x] Add effect presets and versioned effect-chain serialization

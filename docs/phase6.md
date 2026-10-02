@@ -69,7 +69,8 @@ work duration to that callback's actual frame count at the configured sample rat
 These counters do not measure device-level ALSA xruns/WASAPI glitches/CoreAudio
 hardware underruns or physical playback latency.
 
-[Recorded CSV](../benchmarks/results/2026-10-02-playback-load.csv): Apple M4,
+[Recorded CSV](../benchmarks/results/2026-10-02-playback-load.csv) and
+[machine/source metadata](../benchmarks/results/2026-10-02-playback-load.json): Apple M4,
 macOS 27.0.1, AppleClang 21.0.0, Release, TEYUN Q26 system-default USB output,
 48 kHz stereo, requested 128-frame period, 60 seconds, four load threads.
 22,501 callbacks; **0 buffer starvations**, **0 callback budget overruns**;
@@ -108,11 +109,20 @@ level-match dry/wet comparisons externally. Listen for clicks during transitions
 EQ tonal balance, compressor pumping/transients, reverb decay/metallic coloration,
 and delay timing/tails. Include mono/stereo, silence, and transient-heavy material.
 Record source, device, headphones/speakers, levels, settings, listener, observations,
-and acceptance decisions. No human listening result is claimed by automated tests.
+and acceptance decisions. No human listening result is claimed by automated tests. Synthetic chirp, tone
+bursts, noise transients, and silence have been rendered into the local ignored
+`listening-output/` directory as a starting point; speech and music should also be tested.
 
 ## Hosted execution
 
 The validation workflow covers macOS ASan/UBSan, macOS TSan, Linux ASan/UBSan,
 and optimized macOS/Windows builds, plus ten repeated stress runs. A separate
 macOS plugin job builds the AU artifact and runs the host test. Hosted results
-must be linked here once the branch is pushed and those jobs finish.
+were requested by pushing `codex/phase6-audio-validation`.
+
+[Hosted run 37054644906](https://github.com/BrunoFerreira995/audiodrive/actions/runs/37054644906)
+failed before any job steps ran. GitHub's check annotation states: “The job was
+not started because your account is locked due to a billing issue.” Hosted macOS,
+Linux, and Windows validation therefore remains blocked until the account owner
+resolves billing and reruns the workflow. Local Release, ASan/UBSan, TSan, and
+AudioUnit host tests passed; they do not substitute for hosted results.

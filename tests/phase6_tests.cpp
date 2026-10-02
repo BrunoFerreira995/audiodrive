@@ -1,4 +1,6 @@
 #include "effect_chain.hpp"
+#include "../tools/roundtrip_analysis.hpp"
+#include <random>
 #include "audio_driver.hpp"
 #include "input_capture.hpp"
 #include "native_audio.hpp"
@@ -20,6 +22,15 @@ int main(int argc,char** argv) {
         check(!audio32::deserializeEffectChain(text.substr(0,text.size()/2)),"reject incomplete chain");
     }
     check(!audio32::deserializeEffectChain("audio32-chain 2"),"reject unknown version");
+    {
+        std::mt19937 random(42); std::vector<float> probe(511),input(2048,0);
+        for (auto& x:probe) x=(random()&1)?0.03F:-0.03F;
+        for (std::size_t i=0;i<probe.size();++i) input[137+i]=-probe[i]*0.5F;
+        auto match=audio32::diagnostics::findRoundTrip(input,probe,1000);
+        check(match && match->lag==137 && match->correlation>0.99,"physical lag estimator finds inverted attenuated signal");
+        check(!audio32::diagnostics::findRoundTrip(std::vector<float>(2048,0),probe,1000),"no false latency from silence");
+        check(!audio32::diagnostics::findRoundTrip(input,probe,100),"reject signal outside lag window");
+    }
     audio32::AudioDriver driver(7*sizeof(float)); driver.setChannels(3);
     check(driver.write(std::vector<float>(9,0.1F))==6,"driver writes only complete frames");
     audio32::AudioInputCapture capture;
