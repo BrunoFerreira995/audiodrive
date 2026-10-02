@@ -1,0 +1,23 @@
+{
+  "utc": "2026-10-02",
+  "cpu": "Apple M4",
+  "os": "macOS 27.0.1 arm64",
+  "compiler": "AppleClang 21.0.0",
+  "build_type": "Release",
+  "flags": "-O3 -DNDEBUG",
+  "mode": "hardware playback callback, not physical latency",
+  "output_name": "TEYUN Q26",
+  "output_id": "AppleUSBAudioEngine:Shenzhen Ulanzi Technology Co. Ltd.:TEYUN Q26:2021-11-11-0000-0000-0000:2",
+  "rate": 48000,
+  "channels": 2,
+  "requested_period_frames": 128,
+  "seconds": 60,
+  "load_threads": 4,
+  "source_sha256": {
+    "src/native_audio.cpp": "cd4cc7f2d620fff1607a4f358f9374874e4e6ce141bca8728ffb4278f16bf9fd",
+    "src/dsp.cpp": "a17bdd97f3b3b418fe57763f4c96ef6e149f5077875ecb82312e5d83a96e7213",
+    "tools/hardware_benchmark.cpp": "e24a1ee4a6a66168413be0a114d0708788f9a3fb9481889b6e175fd3ad837e37"
+  },
+  "measurement_revision_note": "Measurements were taken before the roundtrip-only estimator refactor; the playback callback and DSP code are unchanged. tools/hardware_benchmark.cpp hash identifies the measurement version.",
+  "counters": "buffer starvation and callback budget overruns; device-level underruns unmeasured"
+}

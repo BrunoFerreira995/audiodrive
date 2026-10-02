@@ -1,0 +1,21 @@
+{
+  "utc": "2026-10-02T19:04:44.971519+00:00",
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "architecture": "arm64",
+  "cpu": "Apple M4",
+  "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin",
+  "revision": "41553fd07ca4dc3bfe102975bde16ac5d45a25d2",
+  "working_tree": "M CMakeLists.txt\n M README.md\n M include/dsp.hpp\n M src/dsp.cpp\n?? .github/\n?? benchmarks/\n?? docs/dsp.md\n?? tests/dsp_tests.cpp\n?? tests/stress_tests.cpp",
+  "iterations": 10000,
+  "warmup_blocks": 1000,
+  "build_type": "Release",
+  "cxx_flags": "",
+  "release_flags": "-O3 -DNDEBUG",
+  "binary_sha256": "bc7e3a313bfd15f0f7353f9b9bdfa08d9d6fc7a433b6dbbb9226763349969634",
+  "source_sha256": {
+    "src/dsp.cpp": "a17bdd97f3b3b418fe57763f4c96ef6e149f5077875ecb82312e5d83a96e7213",
+    "include/dsp.hpp": "e2533653987d1770776d4104e784bbce8b5648df99a215459bc38023dd1f5a79",
+    "benchmarks/dsp_latency.cpp": "46bc3b6d39ff72a4afd5423b7f9af3541362521b560b2f197329b5ad9bb701d8"
+  },
+  "measurement": "steady_clock wall time around DspEngine::process only; stereo; synthetic input; unpaced"
+}

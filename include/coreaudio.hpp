@@ -14,6 +14,8 @@ using AudioQueueBufferRef = AudioQueueBuffer*;
 
 namespace audio32 {
 
+enum class OutputBackend { AudioQueue, Native };
+
 class CoreAudioBackend {
 public:
     using RenderCallback = std::function<void(float* output, std::uint32_t frames, std::uint32_t channels)>;
@@ -23,6 +25,10 @@ public:
 
     CoreAudioBackend(const CoreAudioBackend&) = delete;
     CoreAudioBackend& operator=(const CoreAudioBackend&) = delete;
+
+    void setBackend(OutputBackend backend);
+    OutputBackend backend() const noexcept;
+    void setPeriodFrames(std::uint32_t frames);
 
     bool initialize(double sampleRate, std::uint32_t channels, RenderCallback callback);
     void setOutputDeviceUid(std::string deviceUid);

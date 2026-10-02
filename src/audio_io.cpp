@@ -1,4 +1,5 @@
 #include "audio_io.hpp"
+#include "miniaudio.h"
 
 #include <algorithm>
 #include <array>
@@ -363,17 +364,31 @@ std::optional<DecodedAudio> decodeAudioFile(const std::filesystem::path& path) {
         return std::nullopt;
     }
 
+    if (matches(*bytes, 0, "FORM")) return decodeAiff(*bytes);
+    if (matches(*bytes, 0, "caff")) return decodeCaf(*bytes);
     if (matches(*bytes, 0, "RIFF")) {
-        return decodeWav(*bytes);
+        if (auto decoded=decodeWav(*bytes)) return decoded;
     }
-    if (matches(*bytes, 0, "FORM")) {
-        return decodeAiff(*bytes);
+    ma_decoder decoder{};
+    const auto config=ma_decoder_config_init(ma_format_f32,0,0);
+    if (ma_decoder_init_memory(bytes->data(),bytes->size(),&config,&decoder)!=MA_SUCCESS) return std::nullopt;
+    struct Cleanup { ma_decoder* decoder; ~Cleanup() { ma_decoder_uninit(decoder); } } cleanup{&decoder};
+    if (decoder.outputChannels==0 || decoder.outputChannels>64 || decoder.outputSampleRate==0) return std::nullopt;
+    DecodedAudio audio; audio.channels=decoder.outputChannels; audio.sampleRate=decoder.outputSampleRate;
+    // Bound full-file decoded storage to 256 Mi samples (1 GiB).
+    constexpr std::size_t maxSamples=256*1024*1024;
+    std::vector<float> block(4096*audio.channels);
+    for (;;) {
+        ma_uint64 frames=0;
+        const auto result=ma_decoder_read_pcm_frames(&decoder,block.data(),4096,&frames);
+        if (result!=MA_SUCCESS && result!=MA_AT_END) return std::nullopt;
+        const auto count=static_cast<std::size_t>(frames)*audio.channels;
+        if (count>maxSamples-audio.samples.size()) return std::nullopt;
+        audio.samples.insert(audio.samples.end(),block.begin(),block.begin()+count);
+        if (frames==0 || result==MA_AT_END) break;
     }
-    if (matches(*bytes, 0, "caff")) {
-        return decodeCaf(*bytes);
-    }
-
-    return std::nullopt;
+    if (audio.samples.empty()) return std::nullopt;
+    return audio;
 }
 
 } // namespace audio32

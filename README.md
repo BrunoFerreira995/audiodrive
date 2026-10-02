@@ -34,7 +34,6 @@ The project is under active development. The README separates implemented librar
 
 ## Experimental Surfaces
 
-- Basic equalizer, compressor, reverb, and delay modules
 - MIDI control-change mapping for DSP parameters
 - AudioUnit packaging metadata
 - AVFoundation, Metal, Bluetooth, and spatial audio capability boundaries
@@ -46,11 +45,10 @@ Current:
 
 - macOS 14+
 - Apple Silicon and Intel Macs supported by the active CMake toolchain
+- Linux ALSA and Windows WASAPI implementations (device validation pending)
 
 Future:
 
-- Linux audio backends
-- Windows audio backends
 - JACK-compatible workflows
 
 ## Architecture
@@ -100,30 +98,36 @@ Current support:
 - PCM 16-bit, 24-bit, and 32-bit conversion to `Float32`
 - Float64 conversion to `Float32`
 - LPCM WAV, AIFF, and CAF decoding to interleaved `Float32`
+- MP3 and FLAC decoding via pinned miniaudio
 
 Planned:
 
 - Native non-`Float32` processing paths
-- Broader compressed format support through platform media APIs
+- AAC and Ogg decoding
 - More complete metadata and channel-layout handling
 
 ## DSP Features
 
 Current:
 
+- Built-in Neutral, Voice, Room, and Echo presets with versioned effect-chain serialization
 - Gain control
 - Limiter
 - Stereo mixing
 - Channel routing
 - FFT magnitude analysis
-- Basic equalizer, compressor, reverb, and delay modules
+- Three-band biquad EQ with low/high shelves and a parametric mid band
+- Stereo-linked soft-knee compressor with attack and release
+- Damped comb/all-pass reverb with independent channel tails
+- Fractional delay with feedback and smoothed delay-time changes
 
 Planned:
 
-- Production-grade filter design
-- Parameter smoothing
-- Presets and effect-chain serialization
+- Additional filter types and compressor detector modes
+- Additional effect presets
 - Broader spectrum analysis tools
+
+See [DSP configuration and processing contract](docs/dsp.md) for parameter ranges, lifecycle, and validation limits.
 
 ## Thread Model
 
@@ -181,15 +185,14 @@ The circular buffer is intended for single-producer / single-consumer audio flow
 - Real-time-friendly render callback
 - High throughput on Apple Silicon
 
-Benchmarks are not published yet. A future benchmark suite should report buffer size, sample rate, channel count, build type, hardware, and measured callback latency.
+Repeatable DSP processing benchmarks, raw CSV results, and machine/compiler metadata
+are published in [the benchmark report](docs/benchmarks.md). The benchmark measures
+processing duration against the audio buffer period; it does not measure end-to-end
+hardware playback latency.
 
-Example benchmark table format:
-
-| Buffer | Sample Rate | Measured Latency |
-|--------|-------------|------------------|
-| 128 frames | 48 kHz | TBD |
-| 256 frames | 48 kHz | TBD |
-| 512 frames | 48 kHz | TBD |
+At 48 kHz stereo with all effects enabled, the recorded Apple M4 run measured
+6.625 µs p99 for 128 frames (2,666.67 µs buffer period). Results depend on hardware,
+scheduler load, compiler, and build configuration.
 
 ## Build
 
@@ -214,6 +217,13 @@ Step 2: Build:
 ```bash
 cmake -S . -B build
 cmake --build build -j8
+```
+
+If an existing build cache refers to a former project location, regenerate it:
+
+```bash
+cmake --fresh -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel 4
 ```
 
 Release build:
@@ -307,7 +317,7 @@ Primary `AudioDriver` methods:
 Supporting modules:
 
 - `audio_io`: PCM conversion and LPCM container decoding
-- `DspEngine`: gain, limiter, analysis, and basic effects
+- `DspEngine`: gain, limiter, analysis, and stateful effects
 - `Mixer`: channel routing and mono/stereo expansion
 - `MidiMapper`: MIDI CC mapping for DSP parameters
 - `CoreAudioBackend`: macOS playback backend boundary
@@ -329,23 +339,26 @@ Audio32/
 Current:
 
 - CoreAudio `AudioQueue` output on macOS
+- Native AudioUnit, ALSA, and WASAPI playback/capture
 
 Planned or research:
 
-- CoreAudio `AudioUnit` render path
-- Hardware input device capture
-- ALSA, WASAPI, PulseAudio, and JACK backends
+- PulseAudio and JACK integration
+- Wider device and host compatibility validation
 
 ## Current Limitations
 
-- Playback is the only hardware audio path currently implemented.
+- Native playback/capture use AudioUnit on macOS, ALSA on Linux, and WASAPI on Windows; hardware validation is currently macOS only.
 - The production macOS output path uses `AudioQueue`.
 - The main driver API processes interleaved `Float32` samples.
-- AudioUnit support is metadata/boundary work, not a complete plugin target.
-- Recording and loopback capture are in-memory rendered-output capture paths, not hardware input capture.
+- The optional JUCE AudioUnit plugin builds and passes a host test; DAW compatibility, signing, and notarization remain.
+- `AudioDriver` recording/loopback remain rendered-output capture; `AudioInputCapture` provides physical device input.
 - Metal, Bluetooth, and spatial audio support are capability/reporting boundaries, not full user-facing workflows.
 
 ## Roadmap
+
+Checked items represent implemented library features or published repository artifacts.
+Hardware validation and broader integrations remain separate milestones.
 
 ### Phase 1: Core Library
 
@@ -376,19 +389,39 @@ Planned or research:
 - [x] Add AudioUnit packaging metadata
 - [x] Add MIDI control mapping API
 - [x] Add AVFoundation integration boundary
-- [ ] Production-grade equalizer
-- [ ] Production-grade compressor
-- [ ] Production-grade reverb
-- [ ] Production-grade delay
+- [x] Production-grade equalizer DSP implementation (see [DSP contract](docs/dsp.md))
+- [x] Production-grade compressor DSP implementation (see [DSP contract](docs/dsp.md))
+- [x] Production-grade reverb DSP implementation (see [DSP contract](docs/dsp.md))
+- [x] Production-grade delay DSP implementation (see [DSP contract](docs/dsp.md))
 
 ### Phase 5: Performance and Platform Polish
 
 - [x] Add ARM64 and Apple Silicon DSP capability detection
-- [x] Add SIMD implementation for the gain/limiter hot path
+- [x] Add standalone SIMD gain/limiter helper
 - [x] Add Metal visualization data preparation
 - [x] Add Bluetooth and spatial audio capability reporting boundaries
-- [ ] Publish repeatable latency benchmarks
-- [ ] Add sanitizer and stress-test workflows
+- [x] Publish [repeatable DSP processing latency benchmarks and baseline results](docs/benchmarks.md)
+- [x] Add ASan/UBSan and ThreadSanitizer workflows
+- [x] Add concurrent SPSC buffer and randomized DSP stress tests
+- [x] Add a manual benchmark workflow with CSV and machine metadata artifacts
+
+### Phase 6: Deployment Validation and Expanded Audio Support
+
+See [implementation details and deployment evidence](docs/phase6.md).
+
+- [ ] Run sanitizer and stress workflows on hosted macOS and Linux runners — [attempt blocked by GitHub account billing](https://github.com/BrunoFerreira995/audiodrive/actions/runs/37054644906)
+- [ ] Publish hardware playback and physical round-trip latency measurements
+- [ ] Validate effect sound quality through listening tests
+- [x] Add effect presets and versioned effect-chain serialization
+- [x] Implement a native CoreAudio AudioUnit render backend
+- [x] Add hardware input capture API
+- [x] Build an AudioUnit effect plugin with automation, editor, and host state
+- [x] Add MP3 and FLAC compressed audio decoding
+- [x] Add ALSA and WASAPI native backend implementations
+- [ ] Validate native devices on Linux and Windows
+- [x] Record sustained hardware playback under CPU load with buffer starvation and callback timing counters
+- [ ] Measure device-level underruns under sustained load
+- [ ] Validate plugin in DAWs and with auval; sign/notarize release artifacts
 
 ## Research
 
