@@ -1,0 +1,2 @@
+backend,rate,channels,requested_period,seconds,load_threads,callbacks,buffer_starvations,callback_budget_overruns,p50_us,p99_us,max_us,backend_error,load_checksum
+Core Audio,48000,2,128,60,4,22501,0,0,4.375,5.875,10.709,0,14.512

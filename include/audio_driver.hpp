@@ -18,6 +18,9 @@ public:
     explicit AudioDriver(std::size_t bufferBytes = 1024 * 1024);
     ~AudioDriver();
 
+    void setOutputBackend(OutputBackend backend);
+    void setPeriodFrames(std::uint32_t frames);
+    std::uint64_t starvationCount() const noexcept;
     bool initialize();
     bool start();
     void stop();
@@ -57,6 +60,7 @@ private:
     CoreAudioBackend backend_;
     std::atomic<bool> recordingEnabled_{false};
     std::atomic<bool> loopbackCaptureEnabled_{false};
+    std::atomic<std::uint64_t> starvations_{0};
     bool initialized_{false};
 };
 

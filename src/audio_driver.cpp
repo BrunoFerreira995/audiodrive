@@ -1,6 +1,7 @@
 #include "audio_driver.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <utility>
 #include <vector>
 
@@ -15,7 +16,13 @@ AudioDriver::~AudioDriver() {
     stop();
 }
 
+void AudioDriver::setOutputBackend(OutputBackend backend) { stop(); backend_.setBackend(backend); initialized_=false; }
+void AudioDriver::setPeriodFrames(std::uint32_t frames) { stop(); backend_.setPeriodFrames(frames); initialized_=false; }
+std::uint64_t AudioDriver::starvationCount() const noexcept { return starvations_.load(); }
+
 bool AudioDriver::initialize() {
+    stop();
+    starvations_.store(0);
     mixer_.setOutputChannels(channels_);
     dsp_.setFormat(sampleRate_, channels_);
     initialized_ = backend_.initialize(sampleRate_, channels_, [this](float* output, std::uint32_t frames, std::uint32_t channels) {
@@ -36,7 +43,8 @@ void AudioDriver::stop() {
 }
 
 void AudioDriver::setSampleRate(double sampleRate) {
-    sampleRate_ = sampleRate;
+    stop();
+    sampleRate_ = std::isfinite(sampleRate) ? std::clamp(sampleRate,8000.0,384000.0) : 48000.0;
     dsp_.setFormat(sampleRate_, channels_);
     initialized_ = false;
 }
@@ -46,7 +54,8 @@ double AudioDriver::sampleRate() const noexcept {
 }
 
 void AudioDriver::setChannels(std::uint32_t channels) {
-    channels_ = std::max<std::uint32_t>(1, channels);
+    stop();
+    channels_ = std::clamp<std::uint32_t>(channels,1,64);
     mixer_.setOutputChannels(channels_);
     dsp_.setFormat(sampleRate_, channels_);
     initialized_ = false;
@@ -57,6 +66,8 @@ std::uint32_t AudioDriver::channels() const noexcept {
 }
 
 void AudioDriver::setOutputDeviceUid(std::string deviceUid) {
+    stop();
+    initialized_=false;
     backend_.setOutputDeviceUid(std::move(deviceUid));
 }
 
@@ -73,7 +84,8 @@ std::int32_t AudioDriver::lastBackendError() const noexcept {
 }
 
 std::size_t AudioDriver::write(std::span<const float> interleavedSamples) noexcept {
-    return buffer_.write(interleavedSamples);
+    const auto count=std::min(interleavedSamples.size(),buffer_.availableWrite());
+    return buffer_.write(interleavedSamples.first(count-count%channels_));
 }
 
 void AudioDriver::setRecordingEnabled(bool enabled) noexcept {
@@ -120,7 +132,7 @@ Mixer& AudioDriver::mixer() noexcept {
 
 void AudioDriver::render(float* output, std::uint32_t frames, std::uint32_t channels) noexcept {
     std::span<float> out(output, static_cast<std::size_t>(frames) * channels);
-    buffer_.read(out);
+    if (buffer_.read(out)<out.size()) starvations_.fetch_add(1,std::memory_order_relaxed);
     dsp_.process(out);
     if (recordingEnabled_.load(std::memory_order_acquire)) {
         recordingBuffer_.write(out);

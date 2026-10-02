@@ -1,4 +1,5 @@
 #include "coreaudio.hpp"
+#include "native_audio.hpp"
 
 #ifdef __APPLE__
 #include <AudioToolbox/AudioToolbox.h>
@@ -24,6 +25,13 @@ struct CoreAudioBackend::Impl {
     std::array<AudioQueueBufferRef, bufferCount> buffers{};
     AudioStreamBasicDescription streamDescription{};
 #endif
+    NativeAudioBackend native;
+#ifdef __APPLE__
+    OutputBackend backend=OutputBackend::AudioQueue;
+#else
+    OutputBackend backend=OutputBackend::Native;
+#endif
+    std::uint32_t periodFrames=128;
     RenderCallback callback;
     double sampleRate = 48000.0;
     std::uint32_t channels = 2;
@@ -53,6 +61,10 @@ bool CoreAudioBackend::initialize(double sampleRate, std::uint32_t channels, Ren
     lastError_.store(0, std::memory_order_release);
     return static_cast<bool>(impl_->callback);
 }
+
+void CoreAudioBackend::setBackend(OutputBackend backend) { stop(); impl_->backend=backend; }
+OutputBackend CoreAudioBackend::backend() const noexcept { return impl_->backend; }
+void CoreAudioBackend::setPeriodFrames(std::uint32_t frames) { stop(); impl_->periodFrames=std::clamp(frames,16U,8192U); }
 
 void CoreAudioBackend::setOutputDeviceUid(std::string deviceUid) {
     impl_->outputDeviceUid = std::move(deviceUid);
@@ -119,9 +131,20 @@ void CoreAudioBackend::handleOutputBuffer(void* userData, AudioQueueRef queue, A
 #endif
 
 bool CoreAudioBackend::start() {
-    if (!impl_->callback) {
-        return false;
+    if (!impl_->callback) { return false; }
+    if (isRunning()) return true;
+    if (impl_->backend==OutputBackend::Native) {
+        NativeAudioConfig config;
+        config.sampleRate=static_cast<std::uint32_t>(impl_->sampleRate);
+        config.channels=impl_->channels; config.periodFrames=impl_->periodFrames;
+        config.outputDeviceId=impl_->outputDeviceUid;
+        const bool ok=impl_->native.initialize(config,[this](float* output,const float*,std::uint32_t frames,std::uint32_t channels) { impl_->callback(output,frames,channels); }) && impl_->native.start();
+        lastError_.store(impl_->native.lastError());
+        running_.store(ok); return ok;
     }
+#ifndef __APPLE__
+    lastError_.store(-1); return false;
+#endif
 
 #ifdef __APPLE__
     if (impl_->queue != nullptr) {
@@ -176,6 +199,7 @@ bool CoreAudioBackend::start() {
 
 void CoreAudioBackend::stop() {
     running_.store(false, std::memory_order_release);
+    if (impl_) impl_->native.stop();
 #ifdef __APPLE__
     if (impl_ != nullptr && impl_->queue != nullptr) {
         AudioQueueStop(impl_->queue, true);
@@ -187,7 +211,7 @@ void CoreAudioBackend::stop() {
 }
 
 bool CoreAudioBackend::isRunning() const noexcept {
-    return running_.load(std::memory_order_acquire);
+    return impl_->backend==OutputBackend::Native ? impl_->native.isRunning() : running_.load(std::memory_order_acquire);
 }
 
 std::uint64_t CoreAudioBackend::underrunCount() const noexcept {
@@ -195,7 +219,7 @@ std::uint64_t CoreAudioBackend::underrunCount() const noexcept {
 }
 
 std::int32_t CoreAudioBackend::lastError() const noexcept {
-    return lastError_.load(std::memory_order_acquire);
+    return impl_->backend==OutputBackend::Native && impl_->native.lastError()!=0 ? impl_->native.lastError() : lastError_.load(std::memory_order_acquire);
 }
 
 } // namespace audio32

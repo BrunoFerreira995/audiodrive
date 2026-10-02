@@ -1,0 +1,21 @@
+name: Latency benchmark artifact
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    runs-on: macos-14
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure Release
+        run: cmake -S . -B build-benchmark -DCMAKE_BUILD_TYPE=Release -DAUDIO32_BUILD_BENCHMARKS=ON
+      - name: Build
+        run: cmake --build build-benchmark --parallel 4
+      - name: Measure
+        run: python3 benchmarks/run.py --build-dir build-benchmark --output benchmarks/results/ci
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dsp-latency-${{ github.sha }}
+          path: benchmarks/results/ci.*

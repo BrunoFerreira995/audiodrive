@@ -1,0 +1,56 @@
+name: Sanitizers and stress
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 1'
+permissions:
+  contents: read
+jobs:
+  validation:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            sanitizer: address-undefined
+          - os: macos-14
+            sanitizer: address-undefined
+          - os: macos-14
+            sanitizer: thread
+          - os: macos-14
+            sanitizer: ''
+          - os: windows-2022
+            sanitizer: ''
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    env:
+      ASAN_OPTIONS: halt_on_error=1
+      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+      TSAN_OPTIONS: halt_on_error=1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake -S . -B build-ci -DCMAKE_BUILD_TYPE=RelWithDebInfo -DAUDIO32_SANITIZER=${{ matrix.sanitizer }}
+      - name: Build
+        run: cmake --build build-ci --config RelWithDebInfo --parallel 4
+      - name: Test and stress
+        run: ctest --test-dir build-ci -C RelWithDebInfo --output-on-failure --timeout 120
+      - name: Repeat stress
+        run: ctest --test-dir build-ci -C RelWithDebInfo -L stress --repeat until-fail:10 --output-on-failure --timeout 120
+  audio-unit:
+    runs-on: macos-14
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure AU
+        run: cmake -S . -B build-au -DCMAKE_BUILD_TYPE=Release -DAUDIO32_BUILD_AU_PLUGIN=ON
+      - name: Build AU and host test
+        run: cmake --build build-au --target audio32_au_host_tests --parallel 4
+      - name: Render and restore state
+        run: ctest --test-dir build-au -R au_host --output-on-failure
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Audio32-AU
+          path: build-au/plugins/Audio32Plugin_artefacts/Release/AU/*.component
