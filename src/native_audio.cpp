@@ -74,7 +74,7 @@ std::vector<NativeDeviceInfo> NativeAudioBackend::devices() {
 bool NativeAudioBackend::initialize(const NativeAudioConfig& config, Callback callback) {
     stop();
     if (impl_->deviceReady) { ma_device_uninit(&impl_->device); impl_->deviceReady=false; }
-    if (!callback || (!config.playback && !config.capture) || config.channels<1 || config.channels>64 ||
+    if (!callback || (!config.playback && !config.capture) || config.channels<1 || config.channels>32 ||
         config.sampleRate<8000 || config.sampleRate>384000 || config.periodFrames<16 || config.periodFrames>8192) {
         impl_->error=MA_INVALID_ARGS; return false;
     }

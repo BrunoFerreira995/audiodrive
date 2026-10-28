@@ -55,7 +55,7 @@ double AudioDriver::sampleRate() const noexcept {
 
 void AudioDriver::setChannels(std::uint32_t channels) {
     stop();
-    channels_ = std::clamp<std::uint32_t>(channels,1,64);
+    channels_ = std::clamp<std::uint32_t>(channels,1,32);
     mixer_.setOutputChannels(channels_);
     dsp_.setFormat(sampleRate_, channels_);
     initialized_ = false;
