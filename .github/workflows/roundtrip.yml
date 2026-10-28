@@ -1,0 +1,11 @@
+name: Physical round-trip latency
+on:
+  workflow_dispatch:
+jobs:
+  roundtrip:
+    runs-on: macos-14
+    if: ${{ false }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Placeholder
+        run: echo "Requires physical loopback hardware - disabled in CI"

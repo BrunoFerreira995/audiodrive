@@ -2,6 +2,7 @@
 #include "miniaudio.h"
 #include <atomic>
 #include <cmath>
+#include <cstdlib>
 #include <cstring>
 #include <utility>
 namespace audio32 {
@@ -12,12 +13,28 @@ struct NativeAudioBackend::Impl {
     std::atomic<std::int32_t> error{0};
     Callback callback;
     static void render(ma_device* device, void* output, const void* input, ma_uint32 frames) noexcept {
+        if (!device || !device->pUserData) return;
+        if (frames == 0) return;
         auto& self=*static_cast<Impl*>(device->pUserData);
-        try { self.callback(static_cast<float*>(output),static_cast<const float*>(input),frames,
-                            device->type==ma_device_type_capture ? device->capture.channels : device->playback.channels); }
+        try {
+            const ma_uint32 channels = (device->type==ma_device_type_capture) ? device->capture.channels : device->playback.channels;
+            if (channels == 0 || channels > 32) {
+                self.error.store(MA_INVALID_ARGS);
+                if (output) std::memset(output, 0, frames * channels * sizeof(float));
+                return;
+            }
+            if (output && !self.callback) {
+                std::memset(output, 0, frames * channels * sizeof(float));
+                return;
+            }
+            self.callback(static_cast<float*>(output),static_cast<const float*>(input),frames, channels);
+        }
         catch (...) {
             self.error.store(MA_ERROR);
-            if (output) std::memset(output,0,frames*device->playback.channels*sizeof(float));
+            if (output) {
+                const ma_uint32 channels = device->playback.channels ? device->playback.channels : device->capture.channels;
+                if (channels > 0 && channels <= 32) std::memset(output,0,frames*channels*sizeof(float));
+            }
         }
     }
     bool contextInit() {
@@ -54,16 +71,24 @@ std::vector<NativeDeviceInfo> NativeAudioBackend::devices() {
     if (result!=MA_SUCCESS) return {};
     std::vector<NativeDeviceInfo> resultList;
     for (ma_uint32 i=0;i<outputCount;++i) {
-#ifdef __APPLE__
-        const std::string id=outputs[i].id.coreaudio;
+#if defined(__APPLE__)
+        const std::string id = outputs[i].id.coreaudio && outputs[i].id.coreaudio[0] ? std::string(outputs[i].id.coreaudio) : ("output:"+std::to_string(i));
+#elif defined(_WIN32)
+        const std::string id = outputs[i].id.wasapi && outputs[i].id.wasapi[0] ? std::string(outputs[i].id.wasapi) : ("wasapi:output:"+std::to_string(i));
+#elif defined(__linux__)
+        const std::string id = outputs[i].id.alsa ? ("alsa:" + std::string(outputs[i].name)) : ("alsa:output:"+std::to_string(i));
 #else
         const std::string id="output:"+std::to_string(i);
 #endif
         resultList.push_back({id,outputs[i].name,false,outputs[i].isDefault==MA_TRUE});
     }
     for (ma_uint32 i=0;i<inputCount;++i) {
-#ifdef __APPLE__
-        const std::string id=inputs[i].id.coreaudio;
+#if defined(__APPLE__)
+        const std::string id = inputs[i].id.coreaudio && inputs[i].id.coreaudio[0] ? std::string(inputs[i].id.coreaudio) : ("input:"+std::to_string(i));
+#elif defined(_WIN32)
+        const std::string id = inputs[i].id.wasapi && inputs[i].id.wasapi[0] ? std::string(inputs[i].id.wasapi) : ("wasapi:input:"+std::to_string(i));
+#elif defined(__linux__)
+        const std::string id = inputs[i].id.alsa ? ("alsa:" + std::string(inputs[i].name)) : ("alsa:input:"+std::to_string(i));
 #else
         const std::string id="input:"+std::to_string(i);
 #endif
@@ -74,7 +99,7 @@ std::vector<NativeDeviceInfo> NativeAudioBackend::devices() {
 bool NativeAudioBackend::initialize(const NativeAudioConfig& config, Callback callback) {
     stop();
     if (impl_->deviceReady) { ma_device_uninit(&impl_->device); impl_->deviceReady=false; }
-    if (!callback || (!config.playback && !config.capture) || config.channels<1 || config.channels>64 ||
+    if (!callback || (!config.playback && !config.capture) || config.channels<1 || config.channels>32 ||
         config.sampleRate<8000 || config.sampleRate>384000 || config.periodFrames<16 || config.periodFrames>8192) {
         impl_->error=MA_INVALID_ARGS; return false;
     }
@@ -92,13 +117,19 @@ bool NativeAudioBackend::initialize(const NativeAudioConfig& config, Callback ca
     const auto select=[&](const std::string& requested,ma_device_info* infos,ma_uint32 count,bool capture,ma_device_id& selected) {
         if (requested.empty()) return true;
         for (ma_uint32 i=0;i<count;++i) {
-#ifdef __APPLE__
-            const std::string id=infos[i].id.coreaudio;
+#if defined(__APPLE__)
+            std::string id = infos[i].id.coreaudio && infos[i].id.coreaudio[0] ? std::string(infos[i].id.coreaudio) : (std::string(capture?"input:":"output:")+std::to_string(i));
+#elif defined(_WIN32)
+            std::string id = infos[i].id.wasapi && infos[i].id.wasapi[0] ? std::string(infos[i].id.wasapi) : (std::string(capture?"wasapi:input:":"wasapi:output:")+std::to_string(i));
+#elif defined(__linux__)
+            std::string id = infos[i].id.alsa ? std::string("alsa:")+infos[i].name : (std::string(capture?"alsa:input:":"alsa:output:")+std::to_string(i));
 #else
-            const std::string id=std::string(capture?"input:":"output:")+std::to_string(i);
+            std::string id = std::string(capture?"input:":"output:")+std::to_string(i);
 #endif
-            (void)capture;
             if (id==requested) { selected=infos[i].id; return true; }
+            // fallback by index if short form
+            const std::string shortId = std::string(capture?"input:":"output:")+std::to_string(i);
+            if (shortId==requested) { selected=infos[i].id; return true; }
         }
         return false;
     };

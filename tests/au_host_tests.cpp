@@ -46,8 +46,28 @@ int main(int argc,char** argv) {
         check(AudioUnitGetProperty(unit,kAudioUnitProperty_ClassInfo,kAudioUnitScope_Global,0,&state,&size),"get state");
         check(AudioUnitSetProperty(unit,kAudioUnitProperty_ClassInfo,kAudioUnitScope_Global,0,&state,sizeof(state)),"restore state");
         if (state) CFRelease(state);
+
+        // Test different block sizes
+        for (UInt32 bsize : {32u, 64u, 256u}) {
+            std::vector<float> s(bsize*2);
+            AudioBufferList bufs{}; bufs.mNumberBuffers=1; bufs.mBuffers[0]={2,static_cast<UInt32>(s.size()*sizeof(float)),s.data()};
+            AudioTimeStamp st{}; st.mSampleTime=1000; st.mFlags=kAudioTimeStampSampleTimeValid;
+            AudioUnitRenderActionFlags f=0;
+            check(AudioUnitRender(unit,&f,&st,0,bsize,&bufs),"render block size");
+        }
+
+        // Test mono
+        format.mChannelsPerFrame=1;
+        format.mBytesPerFrame=4; format.mBytesPerPacket=4;
+        check(AudioUnitSetProperty(unit,kAudioUnitProperty_StreamFormat,kAudioUnitScope_Input,0,&format,sizeof(format)),"mono input format");
+        check(AudioUnitSetProperty(unit,kAudioUnitProperty_StreamFormat,kAudioUnitScope_Output,0,&format,sizeof(format)),"mono output format");
+        std::vector<float> ms(64);
+        AudioBufferList mb{}; mb.mNumberBuffers=1; mb.mBuffers[0]={1,static_cast<UInt32>(ms.size()*sizeof(float)),ms.data()};
+        AudioTimeStamp mst{}; mst.mSampleTime=2000; mst.mFlags=kAudioTimeStampSampleTimeValid;
+        AudioUnitRenderActionFlags mf=0;
+        check(AudioUnitRender(unit,&mf,&mst,0,64,&mb),"render mono");
+
         check(AudioUnitUninitialize(unit),"uninitialize"); check(AudioComponentInstanceDispose(unit),"dispose");
-        // Keep module loaded while the registered factory remains visible to CoreAudio.
         std::cout<<"AudioUnit host render and state tests passed\n";
     } catch(const std::exception& e) { std::cerr<<e.what()<<'\n'; return 1; }
 }

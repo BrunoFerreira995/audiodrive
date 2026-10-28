@@ -17,15 +17,16 @@ juce_add_plugin(Audio32Plugin
     BUNDLE_ID com.audio32.effects
     PLUGIN_MANUFACTURER_CODE A032
     PLUGIN_CODE Au32
-    FORMATS AU
+    FORMATS AU VST3
     PRODUCT_NAME "Audio32 Effects"
     COPY_PLUGIN_AFTER_BUILD FALSE
     IS_SYNTH FALSE
-    NEEDS_MIDI_INPUT FALSE
+    NEEDS_MIDI_INPUT TRUE
     NEEDS_MIDI_OUTPUT FALSE)
-target_sources(Audio32Plugin PRIVATE Audio32Processor.cpp)
+target_sources(Audio32Plugin PRIVATE Audio32Processor.cpp Audio32Editor.cpp)
 target_compile_definitions(Audio32Plugin PUBLIC JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0)
-target_link_libraries(Audio32Plugin PRIVATE audio32 juce::juce_audio_utils PUBLIC juce::juce_recommended_config_flags)
+target_link_libraries(Audio32Plugin PRIVATE audio32 juce::juce_audio_utils juce::juce_gui_basics PUBLIC juce::juce_recommended_config_flags)
+target_include_directories(Audio32Plugin PRIVATE ${PROJECT_SOURCE_DIR}/include)
 add_executable(audio32_au_host_tests ${PROJECT_SOURCE_DIR}/tests/au_host_tests.cpp)
 target_link_libraries(audio32_au_host_tests PRIVATE audio32)
 add_dependencies(audio32_au_host_tests Audio32Plugin_AU)

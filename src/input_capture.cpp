@@ -5,7 +5,7 @@ namespace audio32 {
 AudioInputCapture::AudioInputCapture(std::size_t bytes):buffer_(bytes) {}
 AudioInputCapture::~AudioInputCapture() { stop(); }
 bool AudioInputCapture::initialize(std::uint32_t rate,std::uint32_t channels,std::string id,std::uint32_t period) {
-    if (channels<1 || channels>64) {
+    if (channels<1 || channels>32) {
         NativeAudioConfig invalid; invalid.channels=channels;
         stop(); return backend_.initialize(invalid,{});
     }

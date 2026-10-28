@@ -20,6 +20,8 @@ public:
 
     void setOutputBackend(OutputBackend backend);
     void setPeriodFrames(std::uint32_t frames);
+    void setBufferSize(BufferSize size);
+    std::uint32_t periodFrames() const noexcept;
     std::uint64_t starvationCount() const noexcept;
     bool initialize();
     bool start();

@@ -20,7 +20,7 @@ DspEngine::DspEngine() { resizeState(); }
 
 void DspEngine::setFormat(double sampleRate, std::uint32_t channels) {
     sampleRate_ = std::isfinite(sampleRate) ? std::clamp(sampleRate, 8000.0, 384000.0) : 48000.0;
-    channels_ = std::clamp<std::uint32_t>(channels, 1, 64);
+    channels_ = std::clamp<std::uint32_t>(channels, 1, 32);
     delay_.delayFrames = std::min(delay_.delayFrames, static_cast<std::uint32_t>(sampleRate_*2));
     resizeState();
     updateEqualizer();

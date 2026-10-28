@@ -19,7 +19,7 @@ Audio32 is structured as a small C++20 library with four main components:
 - `metal_visualization`: spectrum-bar data preparation for Metal renderers.
 - `WirelessAudioCapabilities`: Bluetooth and spatial audio capability reporting.
 
-The current macOS backend uses `AudioQueue` output with a `Float32` stream description, fixed-size output buffers, optional output device UID selection, and backend error reporting. The render callback reads from the preallocated circular buffer and applies in-place DSP before each buffer is re-enqueued.
+The current macOS backend uses `AudioQueue` output with a `Float32` stream description, configurable-size output buffers (32-2048-frame presets), optional output device UID selection, and backend error reporting. The render callback reads from the preallocated circular buffer and applies in-place DSP before each buffer is re-enqueued.
 
 `AudioDriver` can capture rendered output into bounded in-memory recording and loopback buffers. Capture is intended for diagnostics, export, and internal routing; it does not yet open a hardware input device.
 

@@ -8,6 +8,7 @@
 #include <cmath>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <random>
 #include <thread>
 #include <vector>
@@ -113,8 +114,15 @@ int main(int argc,char** argv) {
             std::size_t overruns=0; for (std::size_t i=0;i<callbacks;++i) overruns+=times[i]>budgets[i];
             times.resize(callbacks); std::sort(times.begin(),times.end());
             const auto percentile=[&](double p) { return times[static_cast<std::size_t>(std::ceil(p*callbacks))-1]; };
-            report<<"backend,rate,channels,requested_period,seconds,load_threads,callbacks,buffer_starvations,callback_budget_overruns,p50_us,p99_us,max_us,backend_error,load_checksum\n";
-            report<<backend.backendName()<<",48000,2,128,"<<seconds<<','<<loads<<','<<callbacks<<','<<starvations<<','<<overruns<<','<<percentile(0.5)<<','<<percentile(0.99)<<','<<times.back()<<','<<backend.lastError()<<','<<loadChecksum.load()<<'\n';
+            double sum=0, sum2=0; for (auto t:times){ sum+=t; sum2+=t*t; }
+            const double mean=sum/callbacks; const double var=callbacks>1?(sum2/callbacks-mean*mean):0; const double jitter=std::sqrt(std::max(0.0,var));
+            std::cout<<"Callback jitter (std dev): "<<jitter<<" us, mean: "<<mean<<" us\n";
+            // histogram
+            std::map<int,int> hist;
+            for (auto t:times) hist[static_cast<int>(t)]++;
+            std::ofstream h(argv[4]+std::string(".hist.csv")); if (h){ h<<"bucket_us,count\n"; for(auto&[b,c]:hist) h<<b<<','<<c<<'\n'; }
+            report<<"backend,rate,channels,requested_period,seconds,load_threads,callbacks,buffer_starvations,callback_budget_overruns,p50_us,p99_us,max_us,mean_us,jitter_us,backend_error,load_checksum\n";
+            report<<backend.backendName()<<",48000,2,128,"<<seconds<<','<<loads<<','<<callbacks<<','<<starvations<<','<<overruns<<','<<percentile(0.5)<<','<<percentile(0.99)<<','<<times.back()<<','<<mean<<','<<jitter<<','<<backend.lastError()<<','<<loadChecksum.load()<<'\n';
         }
         std::cout<<"Recorded "<<argv[4]<<'\n';
     } catch (const std::exception& e) { std::cerr<<e.what()<<'\n'; return 1; }

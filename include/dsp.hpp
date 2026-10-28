@@ -16,8 +16,13 @@ struct EqualizerSettings {
     float midFrequency = 1000.0F;
     float highFrequency = 6000.0F;
     float midQ = 0.707F;
+    bool highPassEnabled = false;
+    float highPassFrequency = 80.0F;
+    bool lowPassEnabled = false;
+    float lowPassFrequency = 12000.0F;
 };
 
+enum class CompressorDetector { Peak, RMS };
 struct CompressorSettings {
     float threshold = 1.0F;
     float ratio = 1.0F;
@@ -25,6 +30,8 @@ struct CompressorSettings {
     float attackMs = 10.0F;
     float releaseMs = 100.0F;
     float kneeDb = 6.0F;
+    CompressorDetector detector = CompressorDetector::Peak;
+    float rmsWindowMs = 10.0F;
 };
 
 struct ReverbSettings {
@@ -98,6 +105,7 @@ private:
     std::size_t delayWriteIndex_{0};
     double delayFramesCurrent_{0};
     float envelope_{0};
+    float rmsEnv_{0};
     float reverbMixCurrent_{0}, delayMixCurrent_{0};
     float reverbFeedbackCurrent_{0.25F}, delayFeedbackCurrent_{0.25F};
     double smoothing_{0};

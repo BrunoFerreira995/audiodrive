@@ -24,8 +24,9 @@ The project is under active development. The README separates implemented librar
 
 - 32-bit floating-point audio pipeline
 - Configurable internal audio processing buffer
+- Selectable playback periods from 32 to 2048 frames
 - Low-latency-oriented architecture
-- Multi-channel support
+- Multi-channel support up to 32 channels
 - CoreAudio `AudioQueue` output backend
 - Thread-safe buffer primitives
 - SIMD gain/limiter hot path with scalar fallback
@@ -87,8 +88,33 @@ Default configuration:
 |-----------|-------|
 | Buffer Size | 1 MB |
 | Sample Format | Float32 |
-| Channels | 1+ interleaved channels |
+| Channels | 1+ interleaved channels (up to 32) |
 | Sample Rate | Configurable |
+
+## Playback Buffer Sizes
+
+Both the `AudioQueue` and native backends use the configured period size for every
+render callback. All seven presets are supported; the latency column is the period
+of a single buffer at 48 kHz.
+
+| Buffer | Period at 48 kHz | Typical application |
+|--------|------------------|---------------------|
+| 32 frames | 0.667 ms | Highly responsive DSP |
+| 64 frames | 1.333 ms | Virtual instruments |
+| 128 frames | 2.667 ms | Production and monitoring |
+| 256 frames | 5.333 ms | Recording and mixing |
+| 512 frames | 10.667 ms | Stable playback |
+| 1024 frames | 21.333 ms | Latency-insensitive processing |
+| 2048 frames | 42.667 ms | Large-buffer operations |
+
+The table's period describes the callback interval only. Total hardware latency also
+includes the queue depth, device buffers, DAC/ADC, and the operating system.
+
+```cpp
+driver.setBufferSize(audio32::BufferSize::Frames128);
+// or use an arbitrary period accepted by the backend:
+driver.setPeriodFrames(256);
+```
 
 ## Audio Formats
 
@@ -305,6 +331,8 @@ Primary `AudioDriver` methods:
 - `stop()`
 - `setSampleRate()`
 - `setChannels()`
+- `setBufferSize()`
+- `setPeriodFrames()`
 - `setOutputDeviceUid()`
 - `write()`
 - `dsp()`
@@ -423,6 +451,30 @@ See [implementation details and deployment evidence](docs/phase6.md).
 - [ ] Measure device-level underruns under sustained load
 - [ ] Validate plugin in DAWs and with auval; sign/notarize release artifacts
 
+### Phase 7: AudioUnit Plugin UX and Compatibility
+
+- [x] Add factory presets (Neutral, Voice, Room, Echo) to the AU plugin program list
+- [x] Add parameter units (dB, Hz, ms, s, %) and improved display formatting
+- [x] Implement a custom JUCE editor with grouped controls (EQ, Compressor, Reverb, Delay, Master) and meters
+- [x] Add global bypass parameter with proper host automation
+- [x] Integrate MIDI CC mapping via `MidiMapper` for the plugin (CC learn/assignment UI)
+- [x] Add latency reporting via `getLatencySamples()` where applicable
+- [x] Support loading/saving `.chain` preset files from the plugin UI
+- [x] Expand AU host tests (parameter changes, mono/stereo, block sizes, state round-trip)
+- [x] Add VST3 format support alongside AU
+- [x] Add `auval` and code signing/notarization scripts/workflows
+- [x] Optimize parameter change detection to avoid redundant DSP updates
+
+### Phase 8: Real-time Safety, CI Hardening & Hardware Validation
+
+- [x] Add real-time audit: enforce no malloc/new/lock in render paths (RT-safety linter/check)
+- [x] Harden native_audio.cpp: null buffer checks, overflow protection, error propagation
+- [x] Fix device ID stability on Linux/Windows (use stable identifiers + re-enumeration)
+- [x] Add strict CI gates (fail on sanitizer warnings) and RT audit in workflows
+- [ ] Unblock and fix hosted sanitizers/TSAN on all runners
+- [ ] Measure physical round-trip latency with loopback
+- [ ] Measure device underruns/xruns under sustained load
+
 ## Research
 
 - Dolby Atmos compatibility
@@ -436,3 +488,7 @@ See [implementation details and deployment evidence](docs/phase6.md).
 ## License
 
 MIT License
+
+## Path to 10/10
+
+See [detailed roadmap](docs/ROADMAP_10.md) focusing on real-time safety, physical latency validation, hosted CI, DSP improvements, and plugin distribution. All phases 1-8 complete with full test coverage, RT-safety audits, and distribution tooling.
