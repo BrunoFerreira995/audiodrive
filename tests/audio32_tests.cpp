@@ -149,6 +149,32 @@ int main() {
     }
 
     {
+        static_assert(audio32::kBufferSizeProfiles.size() == 7);
+        static_assert(audio32::bufferSizeFrames(audio32::BufferSize::Frames32) == 32);
+        static_assert(audio32::bufferSizeFrames(audio32::BufferSize::Frames2048) == 2048);
+
+        for (const auto& profile : audio32::kBufferSizeProfiles) {
+            assert(audio32::isSupportedBufferSize(profile.frames));
+            assert(audio32::bufferSizeFrames(profile.size) == profile.frames);
+            assert(std::fabs(audio32::bufferLatencyMs(profile.size) - profile.latencyMs) < 0.000001);
+
+            audio32::CoreAudioBackend backend;
+            backend.setPeriodFrames(profile.frames);
+            assert(backend.periodFrames() == profile.frames);
+        }
+
+        assert(!audio32::isSupportedBufferSize(16));
+        assert(!audio32::isSupportedBufferSize(48));
+        assert(!audio32::isSupportedBufferSize(4096));
+
+        audio32::AudioDriver driver;
+        driver.setBufferSize(audio32::BufferSize::Frames2048);
+        assert(driver.periodFrames() == 2048);
+        driver.setBufferSize(audio32::BufferSize::Frames32);
+        assert(driver.periodFrames() == 32);
+    }
+
+    {
         audio32::CoreAudioBackend backend;
         backend.setOutputDeviceUid("test-device");
         assert(backend.outputDeviceUid() == "test-device");

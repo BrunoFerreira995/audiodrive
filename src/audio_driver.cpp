@@ -18,6 +18,8 @@ AudioDriver::~AudioDriver() {
 
 void AudioDriver::setOutputBackend(OutputBackend backend) { stop(); backend_.setBackend(backend); initialized_=false; }
 void AudioDriver::setPeriodFrames(std::uint32_t frames) { stop(); backend_.setPeriodFrames(frames); initialized_=false; }
+void AudioDriver::setBufferSize(BufferSize size) { setPeriodFrames(bufferSizeFrames(size)); }
+std::uint32_t AudioDriver::periodFrames() const noexcept { return backend_.periodFrames(); }
 std::uint64_t AudioDriver::starvationCount() const noexcept { return starvations_.load(); }
 
 bool AudioDriver::initialize() {

@@ -18,7 +18,6 @@ namespace audio32 {
 
 struct CoreAudioBackend::Impl {
     static constexpr std::uint32_t bufferCount = 3;
-    static constexpr std::uint32_t framesPerBuffer = 512;
 
 #ifdef __APPLE__
     AudioQueueRef queue = nullptr;
@@ -65,6 +64,7 @@ bool CoreAudioBackend::initialize(double sampleRate, std::uint32_t channels, Ren
 void CoreAudioBackend::setBackend(OutputBackend backend) { stop(); impl_->backend=backend; }
 OutputBackend CoreAudioBackend::backend() const noexcept { return impl_->backend; }
 void CoreAudioBackend::setPeriodFrames(std::uint32_t frames) { stop(); impl_->periodFrames=std::clamp(frames,16U,8192U); }
+std::uint32_t CoreAudioBackend::periodFrames() const noexcept { return impl_->periodFrames; }
 
 void CoreAudioBackend::setOutputDeviceUid(std::string deviceUid) {
     impl_->outputDeviceUid = std::move(deviceUid);
@@ -109,7 +109,7 @@ bool configureOutputDevice(AudioQueueRef queue, const std::string& outputDeviceU
 void CoreAudioBackend::handleOutputBuffer(void* userData, AudioQueueRef queue, AudioQueueBufferRef buffer) {
     auto* impl = static_cast<Impl*>(userData);
     const auto channels = impl->channels;
-    const auto frames = Impl::framesPerBuffer;
+    const auto frames = impl->periodFrames;
     const auto byteSize = static_cast<std::uint32_t>(frames * channels * sizeof(float));
 
     if (buffer->mAudioDataBytesCapacity < byteSize) {
@@ -173,7 +173,7 @@ bool CoreAudioBackend::start() {
         return false;
     }
 
-    const auto bufferBytes = static_cast<std::uint32_t>(Impl::framesPerBuffer * impl_->channels * sizeof(float));
+    const auto bufferBytes = static_cast<std::uint32_t>(impl_->periodFrames * impl_->channels * sizeof(float));
     for (auto& buffer : impl_->buffers) {
         status = AudioQueueAllocateBuffer(impl_->queue, bufferBytes, &buffer);
         if (status != noErr) {

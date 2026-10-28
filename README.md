@@ -24,6 +24,7 @@ The project is under active development. The README separates implemented librar
 
 - 32-bit floating-point audio pipeline
 - Configurable internal audio processing buffer
+- Selectable playback periods from 32 to 2048 frames
 - Low-latency-oriented architecture
 - Multi-channel support up to 32 channels
 - CoreAudio `AudioQueue` output backend
@@ -89,6 +90,31 @@ Default configuration:
 | Sample Format | Float32 |
 | Channels | 1+ interleaved channels (up to 32) |
 | Sample Rate | Configurable |
+
+## Playback Buffer Sizes
+
+Both the `AudioQueue` and native backends use the configured period size for every
+render callback. All seven presets are supported; the latency column is the period
+of a single buffer at 48 kHz.
+
+| Buffer | Period at 48 kHz | Typical application |
+|--------|------------------|---------------------|
+| 32 frames | 0.667 ms | Highly responsive DSP |
+| 64 frames | 1.333 ms | Virtual instruments |
+| 128 frames | 2.667 ms | Production and monitoring |
+| 256 frames | 5.333 ms | Recording and mixing |
+| 512 frames | 10.667 ms | Stable playback |
+| 1024 frames | 21.333 ms | Latency-insensitive processing |
+| 2048 frames | 42.667 ms | Large-buffer operations |
+
+The table's period describes the callback interval only. Total hardware latency also
+includes the queue depth, device buffers, DAC/ADC, and the operating system.
+
+```cpp
+driver.setBufferSize(audio32::BufferSize::Frames128);
+// or use an arbitrary period accepted by the backend:
+driver.setPeriodFrames(256);
+```
 
 ## Audio Formats
 
@@ -305,6 +331,8 @@ Primary `AudioDriver` methods:
 - `stop()`
 - `setSampleRate()`
 - `setChannels()`
+- `setBufferSize()`
+- `setPeriodFrames()`
 - `setOutputDeviceUid()`
 - `write()`
 - `dsp()`
