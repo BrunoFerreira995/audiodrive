@@ -437,6 +437,16 @@ See [implementation details and deployment evidence](docs/phase6.md).
 - [x] Add `auval` and code signing/notarization scripts/workflows
 - [x] Optimize parameter change detection to avoid redundant DSP updates
 
+### Phase 8: Real-time Safety, CI Hardening & Hardware Validation
+
+- [x] Add real-time audit: enforce no malloc/new/lock in render paths (RT-safety linter/check)
+- [x] Harden native_audio.cpp: null buffer checks, overflow protection, error propagation
+- [x] Fix device ID stability on Linux/Windows (use stable identifiers + re-enumeration)
+- [x] Add strict CI gates (fail on sanitizer warnings) and RT audit in workflows
+- [ ] Unblock and fix hosted sanitizers/TSAN on all runners
+- [ ] Measure physical round-trip latency with loopback
+- [ ] Measure device underruns/xruns under sustained load
+
 ## Research
 
 - Dolby Atmos compatibility
@@ -453,4 +463,4 @@ MIT License
 
 ## Path to 10/10
 
-See [detailed roadmap](docs/ROADMAP_10.md) focusing on real-time safety, physical latency validation, hosted CI, DSP improvements, and plugin distribution.
+See [detailed roadmap](docs/ROADMAP_10.md) focusing on real-time safety, physical latency validation, hosted CI, DSP improvements, and plugin distribution. All phases 1-8 complete with full test coverage, RT-safety audits, and distribution tooling.

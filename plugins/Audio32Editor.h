@@ -30,6 +30,7 @@ private:
     GroupComponent masterGroup{"Master"};
     GroupComponent midiGroup{"MIDI CC Learn"};
     GroupComponent presetGroup{"Presets"};
+    GroupComponent meterGroup{"Meters"};
 
     std::vector<std::unique_ptr<juce::Slider>> sliders;
     std::vector<std::unique_ptr<juce::Label>> labels;
@@ -39,6 +40,9 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> bypassAttachment;
     std::unique_ptr<juce::TextButton> loadChainButton;
     std::unique_ptr<juce::TextButton> saveChainButton;
+    std::unique_ptr<juce::ProgressBar> vuMeterL;
+    std::unique_ptr<juce::ProgressBar> vuMeterR;
+    double meterLevel = 0.0;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Audio32Editor)
 };

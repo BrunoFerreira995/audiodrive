@@ -129,3 +129,16 @@ if(AUDIO32_BUILD_HARDWARE_TOOLS)
     add_executable(audio32_render_effects tools/render_effects.cpp)
     target_link_libraries(audio32_render_effects PRIVATE audio32)
 endif()
+
+add_custom_target(rt_audit
+    COMMAND ${CMAKE_COMMAND} -E echo "Running RT-safety audit"
+    COMMAND python3 ${PROJECT_SOURCE_DIR}/scripts/rt_audit.py
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+add_executable(audio32_property_tests tests/property_tests.cpp)
+target_link_libraries(audio32_property_tests PRIVATE audio32)
+add_test(NAME audio32_property_tests COMMAND audio32_property_tests)
+
+add_executable(audio32_golden_tests tests/golden_tests.cpp)
+target_link_libraries(audio32_golden_tests PRIVATE audio32)
+add_test(NAME audio32_golden_tests COMMAND audio32_golden_tests)

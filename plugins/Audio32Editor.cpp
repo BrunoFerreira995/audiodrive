@@ -6,7 +6,7 @@
 Audio32Editor::Audio32Editor(Audio32Processor& p)
     : AudioProcessorEditor(&p), processor(p)
 {
-    setSize(820, 560);
+    setSize(820, 600);
     setResizable(false, false);
 
     struct ParamDef { const char* id; const juce::String name; };
@@ -42,6 +42,11 @@ Audio32Editor::Audio32Editor(Audio32Processor& p)
     addAndMakeVisible(masterGroup);
     addAndMakeVisible(midiGroup);
     addAndMakeVisible(presetGroup);
+    addAndMakeVisible(meterGroup);
+    vuMeterL = std::make_unique<juce::ProgressBar>(meterLevel);
+    vuMeterR = std::make_unique<juce::ProgressBar>(meterLevel);
+    meterGroup.addAndMakeVisible(vuMeterL.get());
+    meterGroup.addAndMakeVisible(vuMeterR.get());
 
     bypassButton = std::make_unique<juce::ToggleButton>("Bypass");
     bypassButton->setColour(juce::ToggleButton::textColourId, juce::Colours::white);
@@ -163,4 +168,10 @@ void Audio32Editor::resized()
     auto pa = presetGroup.getBounds().reduced(15, 22);
     if (loadChainButton) loadChainButton->setBounds(pa.removeFromLeft(90));
     if (saveChainButton) saveChainButton->setBounds(pa.removeFromLeft(90));
+
+    auto meterArea = area.removeFromTop(40);
+    meterGroup.setBounds(meterArea);
+    auto ma2 = meterGroup.getBounds().reduced(15, 12);
+    if (vuMeterL) vuMeterL->setBounds(ma2.removeFromLeft(200));
+    if (vuMeterR) vuMeterR->setBounds(ma2.removeFromLeft(200));
 }

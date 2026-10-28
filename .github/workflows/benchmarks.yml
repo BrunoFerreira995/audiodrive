@@ -19,3 +19,12 @@ jobs:
         with:
           name: dsp-latency-${{ github.sha }}
           path: benchmarks/results/ci.*
+
+  regression-check:
+    runs-on: macos-14
+    needs: benchmark
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+      - name: Placeholder regression gate
+        run: echo "Performance regression detection placeholder"

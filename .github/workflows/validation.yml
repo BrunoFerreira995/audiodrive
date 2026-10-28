@@ -26,15 +26,17 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     env:
-      ASAN_OPTIONS: halt_on_error=1
+      ASAN_OPTIONS: halt_on_error=1:detect_leaks=1:print_stacktrace=1
       UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
-      TSAN_OPTIONS: halt_on_error=1
+      TSAN_OPTIONS: halt_on_error=1:second_deadlock_stack=1
     steps:
       - uses: actions/checkout@v4
       - name: Configure
         run: cmake -S . -B build-ci -DCMAKE_BUILD_TYPE=RelWithDebInfo -DAUDIO32_SANITIZER=${{ matrix.sanitizer }}
       - name: Build
         run: cmake --build build-ci --config RelWithDebInfo --parallel 4
+      - name: RT-safety audit
+        run: python3 scripts/rt_audit.py
       - name: Test and stress
         run: ctest --test-dir build-ci -C RelWithDebInfo --output-on-failure --timeout 120
       - name: Repeat stress
