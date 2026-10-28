@@ -450,3 +450,7 @@ See [implementation details and deployment evidence](docs/phase6.md).
 ## License
 
 MIT License
+
+## Path to 10/10
+
+See [detailed roadmap](docs/ROADMAP_10.md) focusing on real-time safety, physical latency validation, hosted CI, DSP improvements, and plugin distribution.
